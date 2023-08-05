@@ -577,7 +577,7 @@ contract Kilroy is Context, IERC20, Ownable {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
    
     string private constant _symbol = "KILROY";
-    string private constant _name = "First viral meme ever";
+    string private constant _name = "First Viral Meme Ever";
 
     uint8 private constant _decimals = 18;
     
@@ -686,7 +686,7 @@ contract Kilroy is Context, IERC20, Ownable {
 
     function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "Exceeds allowance"));
         return true;
     }
 
@@ -696,7 +696,7 @@ contract Kilroy is Context, IERC20, Ownable {
     }
 
     function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "Below zero"));
         return true;
     }
 
@@ -705,7 +705,7 @@ contract Kilroy is Context, IERC20, Ownable {
     }
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) external view returns(uint256) {
-        require(tAmount <= _tTotal, "Amount must be less than supply");
+        require(tAmount <= _tTotal, "Invalid amount");
         if (!deductTransferFee) {
             (uint256 rAmount,,,,,) = _getValues(tAmount);
             return rAmount;
@@ -716,7 +716,7 @@ contract Kilroy is Context, IERC20, Ownable {
     }
 
     function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
-        require(rAmount <= _rTotal, "Amount must be less than total reflections");
+        require(rAmount <= _rTotal, "Invalid amount");
         uint256 currentRate = _getRate();
         return rAmount.div(currentRate);
     }
@@ -947,10 +947,10 @@ contract Kilroy is Context, IERC20, Ownable {
         address to,
         uint256 amount
     ) private {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
-        require(amount <= balanceOf(from), "Transfer amount exceeds allowance");
-        require(amount >= 0, "Transfer amount must be >= 0");
+        require(from != address(0), "Invalid address");
+        require(to != address(0), "Invalid address");
+        require(amount <= balanceOf(from), "Exceeds allowance");
+        require(amount >= 0, "Invalid amount");
    
         uint256 contractTokenBalance = balanceOf(address(this));
         bool overMinTokenBalance = contractTokenBalance >= numTokensToSell;
@@ -1025,7 +1025,6 @@ contract Kilroy is Context, IERC20, Ownable {
                 emit SwapAndFundProject(newBalance);
             }
         }
-       
     }
 
     function swapTokensForETH(uint256 tokenAmount) private {
