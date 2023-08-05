@@ -45,6 +45,7 @@
     Website :  https://kilroyoneth.com/
 
 
+
 */
 
 
@@ -949,7 +950,7 @@ contract Kilroy is Context, IERC20, Ownable {
     ) private {
         require(from != address(0), "Invalid address");
         require(to != address(0), "Invalid address");
-        require(amount <= balanceOf(from), "Exceeds allowance");
+        require(amount <= balanceOf(from), "Exceeds balance");
         require(amount >= 0, "Invalid amount");
    
         uint256 contractTokenBalance = balanceOf(address(this));
