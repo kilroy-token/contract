@@ -44,6 +44,7 @@
     Twitter :  https://twitter.com/KilroyOnEth
     Website :  https://kilroyoneth.com/
 
+
 */
 
 
@@ -568,15 +569,13 @@ contract Kilroy is Context, IERC20, Ownable {
     address[] private _excludedFromReward;
 
     address payable public projectFundAddress = payable(0x57A1ab41a7B567ED03BC610ba510143059177C17);
-    address payable public buyBackAddress = payable(0x000000000000000000000000000000000000dEaD);
     address payable public burnAddress = payable(0x000000000000000000000000000000000000dEaD);
 
-    uint256 public numTokensToSell = 10000 * (10**18);
+    uint256 public numTokensToSell = 50000 * (10**18);
     uint256 private constant MAX = ~uint256(0);
     uint256 private _tTotal = 100000000 * (10**18); 
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
-    uint256 public _maxTxAmount = 2000000 * (10**18);
-
+   
     string private constant _symbol = "KILROY";
     string private constant _name = "First viral meme ever";
 
@@ -585,14 +584,11 @@ contract Kilroy is Context, IERC20, Ownable {
     uint256 public _taxFee = 0;
     uint256 private _prevTaxFee = _taxFee;
     
-    uint256 public _liquidityFee = 100;
+    uint256 public _liquidityFee = 2000;
     uint256 private _prevLiquidityFee = _liquidityFee;
 
-    uint256 public _projectFee = 300;
+    uint256 public _projectFee = 5000;
     uint256 private _prevProjectFee = _projectFee;
-
-    uint256 public _buyBackFee = 0;
-    uint256 private _prevBuyBackFee = _buyBackFee;
 
     uint256 public _totalLiqFee = 0;
     uint256 private _prevTotalLiqFee = _totalLiqFee;
@@ -605,35 +601,22 @@ contract Kilroy is Context, IERC20, Ownable {
     bool private inSwapAndLiquify;
     
     bool public swapAndLiquifyEnabled = true;
-    bool public swapAndLiquifyMaxAmountEnabled = true;
-
-    uint256 private constant MIN_BUY_AMOUNT = 0;
-    uint256 private constant MAX_BUY_AMOUNT =  10000000 * (10 ** 18); 
-    uint256 public _buyBackMinAmount = MIN_BUY_AMOUNT;
-    uint256 public _buyBackMaxAmount = MAX_BUY_AMOUNT;
-    uint256 public _buyBackSize = 1500; // 15 %
-    uint256 private _buyBackCooldownInterval = (1 hours);
-    uint256 private _buyBackCooldownTimestamp = 0;
-
-    uint256 private timeLock = 0;
         
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiquidity);
-    event SwapAndLiquifyMaxAmountEnabled(bool enabled, uint256 maxTokenIntoLiquidity);
     event SwapAndFundProject(uint256 amount);
-    event SwapForBuyBack(uint256 amount);
+
     event SetUniswapRouterAddress(address newRouter, address pair);
     event SetUniswapPairAddress(address newPair);
+
     event SetFundAddress(address newAddress);
-    event SetFees(uint256 newRewardFee, uint256 newLiquidityFee, uint256 newProjectFee, uint256 newBuyBackFee);
+
+    event SetFees(uint256 newRewardFee, uint256 newLiquidityFee, uint256 newProjectFee);
+    event SetFee(address account, uint256 newFee, bool enabled);
+
     event ExcludeFromReward(address account);
     event IncludeInReward(address account);
-    event SetFee(address account, uint256 newFee, bool enabled);
-    event SetnumTokensToSell(uint256 amount);
-    event RescueETH(uint256 amount);
-    event TimeLock(uint256 timestamp);
-    event SetBuyBackConfiguration(uint256 amountMin, uint256 amountMax, uint256 cooldownInterval, uint256 buyBackSize);
-    event SetBuyBackAddress(address newAddress);
+    event SetMinimumTokensToSell(uint256 amount);
 
     modifier lockTheSwap {
         inSwapAndLiquify = true;
@@ -644,7 +627,6 @@ contract Kilroy is Context, IERC20, Ownable {
     constructor () public {
         _rOwned[_msgSender()] = _rTotal;
         
-        // BSC MainNet, Uniswapswap Router
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
         
         // Create a uniswap pair for this new token
@@ -661,11 +643,8 @@ contract Kilroy is Context, IERC20, Ownable {
         //exclude pair from receiving rewards
         _isExcludedFromReward[ uniswapV2Pair ] = true;
      
-        _totalLiqFee = _liquidityFee.add(_projectFee).add(_buyBackFee);
+        _totalLiqFee = _liquidityFee.add(_projectFee);
         _prevTotalLiqFee = _totalLiqFee;
-
-        timeLock = block.timestamp;
-        _buyBackCooldownTimestamp = block.timestamp;
 
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
@@ -723,10 +702,6 @@ contract Kilroy is Context, IERC20, Ownable {
 
     function isExcludedFromReward(address account) external view returns (bool) {
         return _isExcludedFromReward[account];
-    }
-
-    function totalFees() external view returns (uint256) {
-        return _tFeeTotal;
     }
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) external view returns(uint256) {
@@ -790,51 +765,27 @@ contract Kilroy is Context, IERC20, Ownable {
         emit SetFundAddress(projectFundAddress);
     }
 
-   function setFees(uint256 newRewardFee, uint256 newLiquidityFee, uint256 newProjectFee, uint256 newBuyBackFee) external onlyOwner() {
-        require( (newRewardFee.add(newLiquidityFee).add(newProjectFee).add(newBuyBackFee)) <= 1000, "Total fees must be <= 1000" );
+   function setFees(uint256 newRewardFee, uint256 newLiquidityFee, uint256 newProjectFee) external onlyOwner() {
+        require( (newRewardFee.add(newLiquidityFee).add(newProjectFee)) <= 500, "Total fees must be <= 500" );
         
         _taxFee = newRewardFee;
         _liquidityFee = newLiquidityFee;
         _projectFee = newProjectFee;
-        _buyBackFee = newBuyBackFee;
-        _totalLiqFee = _liquidityFee.add(_projectFee).add(_buyBackFee);
+        _totalLiqFee = _liquidityFee.add(_projectFee);
         
-        emit SetFees(newRewardFee, newLiquidityFee, newProjectFee, newBuyBackFee);
+        emit SetFees(newRewardFee, newLiquidityFee, newProjectFee);
     }
 
     function setFee(address account, uint256 newFee, bool enabled) external onlyOwner {
-        require( newFee <= 1000, "Total fee must be <= 1000" );
+        require( newFee <= 500, "Total fee must be <= 500" );
 
         _specialFees[ account ] = newFee;
         _hasSpecialFee[ account ] = enabled;
         emit SetFee(account, newFee, enabled);
     }
 
-    function setBuyBackConfiguration(uint256 amountMin, uint256 amountMax, uint256 cooldownInterval, uint256 buyBackSize) external onlyOwner {
-        require( amountMin > MIN_BUY_AMOUNT );
-        require( amountMin <= _buyBackMaxAmount) ;
-        require( amountMax > MIN_BUY_AMOUNT );
-        require( amountMax <= MAX_BUY_AMOUNT );
-        require( buyBackSize > 0 );
-        require( buyBackSize <= (10 ** 4)) ;
-
-        _buyBackMinAmount = amountMin;
-        _buyBackMaxAmount = amountMax;
-        _buyBackCooldownInterval = cooldownInterval;
-        _buyBackCooldownTimestamp  = block.timestamp;
-        _buyBackSize = buyBackSize;
-
-        emit SetBuyBackConfiguration(amountMin, amountMax, cooldownInterval, buyBackSize);
-    }
-
-    function setBuyBackAddress(address newAddress) external onlyOwner() {
-        buyBackAddress = payable(newAddress);
-
-        emit SetBuyBackAddress(buyBackAddress);
-    }
-
     function excludeFromReward(address account) external onlyOwner() {
-        require(!_isExcludedFromReward[account], "Account is already excluded");
+        require(!_isExcludedFromReward[account], "Already excluded");
         require(_excludedFromReward.length < 100);
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
@@ -846,7 +797,7 @@ contract Kilroy is Context, IERC20, Ownable {
     }
 
     function includeInReward(address account) external onlyOwner() {
-        require(_isExcludedFromReward[account], "Account is already included");
+        require(_isExcludedFromReward[account], "Already included");
         require(_excludedFromReward.length < 100);
         for (uint256 i = 0; i < _excludedFromReward.length; i++) {
             if (_excludedFromReward[i] == account) {
@@ -867,25 +818,13 @@ contract Kilroy is Context, IERC20, Ownable {
         swapAndLiquifyEnabled = _enabled;
         emit SwapAndLiquifyEnabledUpdated(_enabled);
     }
-    
-    function setSwapAndLiquifyMaxAmountEnabled(bool _enabled) external onlyOwner {
-        swapAndLiquifyMaxAmountEnabled = _enabled;
 
-        emit SwapAndLiquifyMaxAmountEnabled(_enabled, numTokensToSell);
-    }
-
-    function setSwapAndLiquifyMaxAmount(uint256 amount) external onlyOwner {
+    function setMinimumTokensToSell(uint256 amount) external onlyOwner {
         require( amount > 0 );
+        
         numTokensToSell = amount;
 
-        emit SetnumTokensToSell(amount);
-    }
-
-    // contract gains ETH over time
-    function rescueETH(uint256 amount) external onlyOwner {
-        payable( msg.sender ).transfer(amount);
-
-        emit RescueETH(amount);
+        emit SetMinimumTokensToSell(amount);
     }
   
     function _reflectFee(uint256 rFee, uint256 tFee) private {
@@ -956,14 +895,13 @@ contract Kilroy is Context, IERC20, Ownable {
         _prevTotalLiqFee = _totalLiqFee;
         _prevProjectFee = _projectFee;
         _prevLiquidityFee = _liquidityFee;
-        _prevBuyBackFee = _buyBackFee;
     }
   
-    function setSpecialFee(address from, address to) private returns (bool) {
+    function setSpecialFee(address from, address to) private {
         
-        uint256 totalFee = _taxFee.add(_liquidityFee).add(_projectFee).add(_buyBackFee);
+        uint256 totalFee = _taxFee.add(_liquidityFee).add(_projectFee);
         if( totalFee == 0 ) {
-            return false; // don't take fee
+            return;
         }
 
         // either one or both have a special fee, take the lowest
@@ -981,11 +919,8 @@ contract Kilroy is Context, IERC20, Ownable {
         _taxFee = fee.mul(_taxFee).div( totalFee );
         _liquidityFee = fee.mul(_liquidityFee).div( totalFee );
         _projectFee = fee.mul(_projectFee).div( totalFee );
-        _buyBackFee = fee.mul(_buyBackFee).div( totalFee );
 
-        _totalLiqFee = _liquidityFee.add(_projectFee).add(_buyBackFee);
-
-        return ( _taxFee.add(_liquidityFee).add(_buyBackFee) ) > 0;
+        _totalLiqFee = _liquidityFee.add(_projectFee);
     }
 
     function restoreAllFees() private {
@@ -993,7 +928,6 @@ contract Kilroy is Context, IERC20, Ownable {
         _totalLiqFee = _prevTotalLiqFee;
         _projectFee = _prevProjectFee;
         _liquidityFee = _prevLiquidityFee;
-        _buyBackFee = _prevBuyBackFee;
     }
  
     function _approve(address owner, address spender, uint256 amount) private {
@@ -1002,6 +936,10 @@ contract Kilroy is Context, IERC20, Ownable {
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
+    }
+
+    function isSwap(address from, address to) private view returns (bool) {
+        return (from == uniswapV2Pair || to == uniswapV2Pair);
     }
 
     function _transfer(
@@ -1015,17 +953,8 @@ contract Kilroy is Context, IERC20, Ownable {
         require(amount >= 0, "Transfer amount must be >= 0");
    
         uint256 contractTokenBalance = balanceOf(address(this));
-        bool overMinTokenBalance = contractTokenBalance > numTokensToSell;
+        bool overMinTokenBalance = contractTokenBalance >= numTokensToSell;
       
-        
-        // save all the fees
-        saveAllFees();
-
-        // if the address has a special fee, use it
-        if( _hasSpecialFee[from] || _hasSpecialFee[to] ) {
-            setSpecialFee(from,to);
-        }
-
         // is the token balance of this contract address over the min number of
         // tokens that we need to initiate a swap + liquidity lock?
         // also, don't get caught in a circular liquidity event.
@@ -1034,16 +963,28 @@ contract Kilroy is Context, IERC20, Ownable {
             overMinTokenBalance &&
             !inSwapAndLiquify &&
             from != uniswapV2Pair &&
-            swapAndLiquifyEnabled &&
-            _totalLiqFee > 0
+            swapAndLiquifyEnabled 
         ) {
-            if( swapAndLiquifyMaxAmountEnabled ) {
-                contractTokenBalance = numTokensToSell;
-            }
-            
             swapAndLiquify(contractTokenBalance);
         }
-        
+
+        // save all the fees
+        saveAllFees();
+
+        if( isSwap(from,to) ) {
+            // if the address has a special fee, use it
+            if( _hasSpecialFee[from] || _hasSpecialFee[to] ) {
+                setSpecialFee(from,to);
+            }
+        }
+        else {
+            // normal transfer
+            _taxFee = 0;
+            _liquidityFee = 0;
+            _projectFee = 0;
+            _totalLiqFee = 0;
+        }
+
         //transfer amount, it will deduct fee and reflect tokens
         _tokenTransfer(from,to,amount);
 
@@ -1053,8 +994,6 @@ contract Kilroy is Context, IERC20, Ownable {
 
     function swapAndLiquify(uint256 tAmount) private lockTheSwap {
         uint256 forLiquidity = tAmount.mul(_liquidityFee).div(_totalLiqFee);
-        uint256 forBuyBack = tAmount.mul(_buyBackFee).div(_totalLiqFee);
-        uint256 forWallets = tAmount.sub(forLiquidity).sub(forBuyBack);
         
         if(forLiquidity > 0 && _liquidityFee > 0)
         {
@@ -1071,35 +1010,22 @@ contract Kilroy is Context, IERC20, Ownable {
             emit SwapAndLiquify(half, newBalance, otherHalf);
         }
                 
-        if(forWallets > 0 && _projectFee > 0) 
+        if(_projectFee > 0) 
         {
-            // sell tokens for ETH and send to project fund
-            uint256 initialBalance = address(this).balance;
-            swapTokensForETH(forWallets);
+            uint256 amount = balanceOf(address(this));
 
-            uint256 newBalance = address(this).balance.sub(initialBalance);
-            transferToAddressETH(projectFundAddress, newBalance);
+            if( amount > 0 ) {
+                // sell tokens for ETH and send to project fund
+                swapTokensForETH( amount );
 
-            emit SwapAndFundProject(newBalance);
-        }
+                // ETH in contract to project fund
+                uint256 newBalance = address(this).balance;
+                transferToAddressETH(projectFundAddress, newBalance);
 
-        if(forBuyBack >0 && _buyBackFee > 0) {
-
-            uint256 buyBackAmount = address(this).balance.mul( _buyBackSize ).div( 10 ** 4);
-
-            // if there is a max set on amount to buy back, cap the amount of eth to spent
-            if( buyBackAmount > _buyBackMaxAmount ) {
-                buyBackAmount = _buyBackMaxAmount;
-            }
-
-            // buy if more than minimum amount of eth to spent
-            if( buyBackAmount > _buyBackMinAmount && _buyBackCooldownTimestamp < block.timestamp) {
-                swapForBuyback(buyBackAmount);
-
-                _buyBackCooldownTimestamp = block.timestamp + _buyBackCooldownInterval;
+                emit SwapAndFundProject(newBalance);
             }
         }
-
+       
     }
 
     function swapTokensForETH(uint256 tokenAmount) private {
@@ -1121,23 +1047,6 @@ contract Kilroy is Context, IERC20, Ownable {
         );
     }
 
-    function swapForBuyback(uint256 amount) private {
-        // generate the uniswap pair path of token -> weth
-        address[] memory path = new address[](2);
-        path[0] = uniswapV2Router.WETH();
-        path[1] = address(this);
-
-        // make the swap
-        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(
-            0, // accept any amount of Tokens
-            path,
-            buyBackAddress,
-            block.timestamp
-        );
-
-        emit SwapForBuyBack(amount);
-    }
-
     function transferToAddressETH(address payable recipient, uint256 amount) private {
         recipient.transfer(amount);
     }
@@ -1157,7 +1066,6 @@ contract Kilroy is Context, IERC20, Ownable {
         );
     }
 
-    //this method is responsible for taking all fee, if takeFee is true
     function _tokenTransfer(address sender, address recipient, uint256 amount) private {
         if (_isExcludedFromReward[sender] && !_isExcludedFromReward[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
@@ -1210,7 +1118,7 @@ contract Kilroy is Context, IERC20, Ownable {
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
-     //to receive ETH from pancakeV2Router when swapping
+     //to receive ETH from V2Router when swapping
     receive() external payable {}
 
 }
