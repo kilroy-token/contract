@@ -44,8 +44,6 @@
     Twitter :  https://twitter.com/KilroyOnEth
     Website :  https://kilroyoneth.com/
 
-
-
 */
 
 
@@ -569,7 +567,7 @@ contract Kilroy is Context, IERC20, Ownable {
 
     address[] private _excludedFromReward;
 
-    address payable public projectFundAddress = payable(0x57A1ab41a7B567ED03BC610ba510143059177C17);
+    address payable public projectFundAddress = payable(0x8AdFd52186d6ae187F845B387A3E3A70E1cEA252);
     address payable public burnAddress = payable(0x000000000000000000000000000000000000dEaD);
 
     uint256 public numTokensToSell = 50000 * (10**18);
