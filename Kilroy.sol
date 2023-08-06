@@ -44,6 +44,7 @@
     Twitter :  https://twitter.com/KilroyOnEth
     Website :  https://kilroyoneth.com/
 
+
 */
 
 
@@ -567,7 +568,7 @@ contract Kilroy is Context, IERC20, Ownable {
 
     address[] private _excludedFromReward;
 
-    address payable public projectFundAddress = payable(0x8AdFd52186d6ae187F845B387A3E3A70E1cEA252);
+    address payable public projectFundAddress = payable(0x6Db1A4e2a18658fc4502f810450C2957CaD80E76);
     address payable public burnAddress = payable(0x000000000000000000000000000000000000dEaD);
 
     uint256 public numTokensToSell = 50000 * (10**18);
@@ -586,7 +587,7 @@ contract Kilroy is Context, IERC20, Ownable {
     uint256 public _liquidityFee = 2000;
     uint256 private _prevLiquidityFee = _liquidityFee;
 
-    uint256 public _projectFee = 5000;
+    uint256 public _projectFee = 500;
     uint256 private _prevProjectFee = _projectFee;
 
     uint256 public _totalLiqFee = 0;
@@ -1001,7 +1002,7 @@ contract Kilroy is Context, IERC20, Ownable {
             uint256 otherHalf = forLiquidity.sub(half);
     
             uint256 initialBalance = address(this).balance;
-            swapTokensForETH(half);
+            swapTokensForETH(half, address(this) );
 
             uint256 newBalance = address(this).balance.sub(initialBalance);
             addLiquidity(otherHalf, newBalance);
@@ -1015,18 +1016,14 @@ contract Kilroy is Context, IERC20, Ownable {
 
             if( amount > 0 ) {
                 // sell tokens for ETH and send to project fund
-                swapTokensForETH( amount );
+                swapTokensForETH( amount, projectFundAddress );
 
-                // ETH in contract to project fund
-                uint256 newBalance = address(this).balance;
-                transferToAddressETH(projectFundAddress, newBalance);
-
-                emit SwapAndFundProject(newBalance);
+                emit SwapAndFundProject( address(this).balance );
             }
         }
     }
 
-    function swapTokensForETH(uint256 tokenAmount) private {
+    function swapTokensForETH(uint256 tokenAmount, address to) private {
         // generate the pancake pair path of token -> weth 
         address[] memory path = new address[](2);
         path[0] = address(this);
@@ -1040,7 +1037,7 @@ contract Kilroy is Context, IERC20, Ownable {
             tokenAmount,
             0, // accept any amount of ETH
             path,
-            address(this),
+            to,
             block.timestamp
         );
     }
