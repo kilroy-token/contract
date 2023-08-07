@@ -563,7 +563,7 @@ contract Kilroy is Context, IERC20, Ownable {
     uint256 private _tTotal = 100000000 * (10**18); 
 
     string private constant _symbol = "KILROY";
-    string private constant _name = "First Viral Meme Ever!";
+    string private constant _name = "Kilroy is back!";
     uint8 private constant _decimals = 18;
        
     uint256 public _liquidityFee = 2000;
@@ -587,7 +587,6 @@ contract Kilroy is Context, IERC20, Ownable {
     
     event SetMinimumTokensToSell(uint256 amount);
     
-
     modifier lockTheSwap {
         inSwapAndLiquify = true;
         _;
