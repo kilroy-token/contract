@@ -566,7 +566,7 @@ contract Kilroy is Context, IERC20, Ownable {
     string private constant _name = "Kilroy is back!";
     uint8 private constant _decimals = 18;
        
-    uint256 public _liquidityFee = 2000;
+    uint256 public _liquidityFee = 2500;
     uint256 private _prevLiquidityFee = _liquidityFee;
 
     uint256 public _projectFee = 500;
